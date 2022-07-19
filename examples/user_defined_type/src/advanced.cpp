@@ -1,5 +1,6 @@
 #define USE_USER_DSON_TYPES
-#include <dson/dson.h>
+
+#include <dson/include_all.h>
 
 #include <fcntl.h>
 #include <sys/types.h>
@@ -470,4 +471,67 @@ void save_and_load_advanced()
 			  << "\t param2 = " << struct_after2.param2 << std::endl
 			  << "\t param3 = " << struct_after2.param3 << std::endl
 			  << "}" << std::endl;
-}
+} // save_and_load_advanced
+
+void save_and_load_advanced_composite()
+{
+	enum class Key
+	{
+		ChunkId,
+		VeryBigStruct,
+		StringAsDson,
+		StringAsDsonObj,
+		StringView
+	};
+	hi::Dson composite;
+	VeryBigStruct very_big_struct;
+	very_big_struct.very_big_data = "very_big_data_!_!_!_!_!_!_!_!_...";
+	very_big_struct.param1 = 9;
+	very_big_struct.param2 = 8;
+	very_big_struct.param3 = 7;
+	composite.emplace(Key::VeryBigStruct, std::move(very_big_struct));
+	composite.emplace(Key::ChunkId, 12345);
+	composite.emplace(Key::StringAsDson, std::string{"Small Ad hoc string cheap to copy"});
+	composite.emplace(hi::to_dson_obj(Key::StringAsDsonObj, std::string{"Big String want to move"}));
+	static std::string_view mit_license{"The above copyright notice and this permission notice shall be included in "
+										"all copies or substantial portions of the Software. ..."};
+	composite.emplace(Key::StringView, mit_license);
+
+	int fd = open("./big_dson.bin", O_CREAT | O_TRUNC | O_WRONLY);
+	if (-1 == fd)
+	{
+		perror("Open Failed");
+		return;
+	}
+
+	while (true)
+	{
+		auto result = composite.copy_to_fd_network_order(fd);
+		if (result == hi::Result::Error)
+		{
+			perror("Write Failed");
+			return;
+		}
+		if (result == hi::Result::Ready)
+			break;
+	}
+	close(fd);
+
+	hi::Dson dson_from_stream;
+	{
+		std::ifstream input("big_dson.bin", std::ios::binary);
+		input >> dson_from_stream;
+	}
+	auto struct_after = to_my_struct(dson_from_stream.get(Key::VeryBigStruct));
+	std::cout << "Composite Loaded from stream:" << std::endl
+			  << "VeryBigStruct {" << std::endl
+			  << "\t very_big_data = " << struct_after.very_big_data << std::endl
+			  << "\t param1 = " << struct_after.param1 << std::endl
+			  << "\t param2 = " << struct_after.param2 << std::endl
+			  << "\t param3 = " << struct_after.param3 << std::endl
+			  << "}," << std::endl
+			  << "ChunkId = " << hi::to_string(dson_from_stream.get(Key::ChunkId)) << std::endl
+			  << "StringAsDson = " << hi::to_string(dson_from_stream.get(Key::StringAsDson)) << std::endl
+			  << "StringAsDsonObj = " << hi::to_string(dson_from_stream.get(Key::StringAsDsonObj)) << std::endl
+			  << "StringView = " << hi::to_string(dson_from_stream.get(Key::StringView)) << std::endl;
+} // save_and_load_advanced_composite

@@ -25,11 +25,11 @@ void print(std::string_view header, hi::Dson & dson)
 void save_and_load()
 {
 	hi::Dson dson1;
-	dson1.insert(Keys::x, 4);
-	dson1.insert(Keys::y, 2);
-	dson1.insert(Keys::z, std::uint32_t(3));
-	dson1.insert(Keys::string_message, std::string{"Mother washed the frame"});
-	dson1.insert(Keys::string_view_message, std::string_view{"Father eats banana"});
+	dson1.emplace(Keys::x, 4);
+	dson1.emplace(Keys::y, 2);
+	dson1.emplace(Keys::z, std::uint32_t(3));
+	dson1.emplace(Keys::string_message, std::string{"Mother washed the frame"});
+	dson1.emplace(Keys::string_view_message, std::string_view{"Father eats banana"});
 	std::cout << "dson1[Keys::z]=" << hi::to_string(dson1[Keys::z]) << std::endl;
 	print("dson1:", dson1);
 	{

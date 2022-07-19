@@ -7,6 +7,7 @@ extern void save_and_load_advanced();
 extern void very_big_struct_converters(
 	hi::Dson::Converters::ConvertersMap & to_host_order,
 	hi::Dson::Converters::ConvertersMap & to_network_order);
+extern void save_and_load_advanced_composite();
 
 struct MyStruct;
 template <>
@@ -101,7 +102,7 @@ void save_and_load_simple()
 	hi::Dson dson1;
 	MyStruct my_struct_before{"Dima", 45, true};
 
-	dson1.insert(1, my_struct_before);
+	dson1.emplace(1, my_struct_before);
 	{
 		std::ofstream output("dson.bin", std::ios::binary);
 		output << dson1;
@@ -134,6 +135,7 @@ int main(int /* argc */, char ** /* argv */)
 {
 	save_and_load_simple();
 	save_and_load_advanced();
+	save_and_load_advanced_composite();
 	std::cout << "Tests finished" << std::endl;
 	return 0;
 }

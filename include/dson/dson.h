@@ -178,12 +178,12 @@ public:
 	}
 
 	/**
-	 * @brief insert
+	 * @brief emplace
 	 * Добавление объекта.
 	 * Если объект с таким ключём уже есть, то он будет заменён на новый
 	 * @param obj
 	 */
-	void insert(std::unique_ptr<DsonObj> obj)
+	void emplace(std::unique_ptr<DsonObj> obj)
 	{
 		if (!obj)
 			return;
@@ -192,11 +192,20 @@ public:
 	}
 
 	template <typename K>
-	void insert(K key, Dson obj)
+	void emplace(K key, Dson obj)
 	{
 		const std::int32_t k = static_cast<std::int32_t>(key);
 		obj.set_key(k);
 		auto ptr = std::make_unique<Dson>(std::move(obj));
+		insert_internal(k, std::move(ptr));
+	}
+
+	template <typename K, typename T>
+	typename std::enable_if<std::is_base_of<DsonObj, T>::value, void>::type emplace(K key, T obj)
+	{
+		auto ptr = std::make_unique<T>(std::move(obj));
+		const std::int32_t k = static_cast<std::int32_t>(key);
+		ptr->set_key(k);
 		insert_internal(k, std::move(ptr));
 	}
 

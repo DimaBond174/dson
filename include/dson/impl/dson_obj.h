@@ -56,6 +56,11 @@ public:
 	virtual std::int32_t data_size() const noexcept = 0;
 	virtual std::int32_t key() const noexcept = 0;
 	virtual void set_key(std::int32_t _key) noexcept = 0;
+	//    template<typename K>
+	//    void typed_set_key(K key)
+	//    {
+	//      set_key(static_cast<std::int32_t>(key));
+	//    }
 	virtual std::int32_t data_type() const noexcept = 0;
 
 	virtual void copy_to_stream_host_order(std::ofstream & out) = 0;

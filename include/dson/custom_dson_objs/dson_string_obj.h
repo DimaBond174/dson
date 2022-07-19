@@ -3,6 +3,8 @@
 
 #include <dson/impl/dson_obj.h>
 
+#include <memory>
+
 namespace hi
 {
 
@@ -298,6 +300,17 @@ private:
 	alignas(Header) mutable char header_[sizeof(Header)];
 	std::string object_;
 };
+
+inline std::unique_ptr<DsonObj> to_dson_obj(std::int32_t key, std::string val)
+{
+	return std::make_unique<DsonStringObj>(key, std::move(val));
+}
+
+template <typename K>
+inline std::unique_ptr<DsonObj> to_dson_obj(K key, std::string val)
+{
+	return to_dson_obj(static_cast<std::int32_t>(key), std::move(val));
+}
 
 } // namespace hi
 #endif // DSON_STRING_OBJ_H

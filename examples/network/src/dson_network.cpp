@@ -37,7 +37,7 @@ void star_routing()
 		++chunk_id;
 		hi::Dson answer;
 		auto sender_address = to_address(dson.get(Key::RouteAddress));
-		answer.insert(std::make_unique<hi::DsonRouteObj>(Key::RouteAddress, sender_address));
+		answer.emplace(std::make_unique<hi::DsonRouteObj>(Key::RouteAddress, sender_address));
 
 		switch (dson.typed_key<Key>())
 		{
@@ -50,8 +50,8 @@ void star_routing()
 			break;
 		case Key::SimpleData:
 			answer.set_key(Key::SimpleData);
-			answer.insert(Key::ChunkID, chunk_id);
-			answer.insert(
+			answer.emplace(Key::ChunkID, chunk_id);
+			answer.emplace(
 				Key::StringData,
 				std::to_string(sender_address->to_cli_id)
 					.append(" received from ")
@@ -94,14 +94,14 @@ void star_routing()
 	{
 		hi::Dson answer;
 		auto sender_address = to_address(dson.get(Key::RouteAddress));
-		answer.insert(std::make_unique<hi::DsonRouteObj>(Key::RouteAddress, sender_address));
+		answer.emplace(std::make_unique<hi::DsonRouteObj>(Key::RouteAddress, sender_address));
 		switch (dson.typed_key<Key>())
 		{
 		case Key::Authed:
 			{
 				scope.print(std::string{"Message::Authed from "}.append(std::to_string(sender_address->from_cli_id)));
 				answer.set_key(Key::SimpleData);
-				answer.insert(
+				answer.emplace(
 					Key::StringData,
 					std::string{"echo message for "}.append(std::to_string(sender_address->from_cli_id)));
 				send_dson(fd, answer);
@@ -109,7 +109,6 @@ void star_routing()
 			break;
 		case Key::SimpleData:
 			{
-				const auto c = hi::to_uint32(dson.get(Key::ChunkID));
 				scope.print(std::string{"Message::SimpleData from "}
 								.append(std::to_string(sender_address->from_cli_id))
 								.append(" chunk{")
@@ -134,8 +133,8 @@ void star_routing()
 			hi::Dson dson;
 			hi::Dson answer_dson;
 			dson.set_key(Key::WantAuth);
-			dson.insert(Key::Password, password);
-			dson.insert(std::make_unique<hi::DsonRouteObj>(Key::RouteAddress));
+			dson.emplace(Key::Password, password);
+			dson.emplace(std::make_unique<hi::DsonRouteObj>(Key::RouteAddress));
 			auto address = dynamic_cast<hi::DsonRouteObj *>(dson.get(Key::RouteAddress));
 			address->address()->from_cli_id = client_certificate_id;
 			bool was_answers{false};
