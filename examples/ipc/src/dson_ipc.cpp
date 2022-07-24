@@ -220,55 +220,10 @@ void empty_messages()
 	close(pipe_server_send_to_client[1]);
 }
 
-/*
-  1) Генерируем Dson сложной иерархии.
-  2) Передаём по pipe в host byte order.
-  3) Записываем на диск в network byte order.
-  4) Грузим с диска, проверяем что идентичен.
-*/
-void ram_pipe_disk_ram()
-{
-	hi::CoutScope scope("ram_pipe_disk_ram");
-	int pipe_client_send_to_server[2];
-	// if (pipe(pipe_client_send_to_server) == -1)
-	//{
-	//     scope.print("ERROR: failed to open pipe");
-	//     return;
-	// }
-
-	enum class Key : std::int32_t
-	{
-		IntVal,
-		StringVal,
-		VectorVal,
-		DsonVal
-	};
-
-	std::vector<hi::Dson> data_vec;
-	// for (int i = 0; i < 10; ++i)
-	//{
-	//   const std::int32_t val = std::rand();
-	//   hi::Dson dson;
-	//   dson.insert(Key::IntVal, val);
-	//   dson.insert(Key::StringVal, std::to_string(val));
-	//   data_vec.emplace_back(std::move(dson));
-	// }
-
-	// hi::Dson dson;
-	// dson.insert(Key::VectorVal, std::move(data_vec));
-
-	// hi::DsonObjMoved<std::vector<hi::Dson>> test{0, std::move(data_vec)};
-	// hi::DsonObjMoved<std::vector<hi::Dson>> *test = new hi::DsonObjMoved<std::vector<hi::Dson>>(0,
-	// std::move(data_vec));
-
-	// close(pipe_client_send_to_server[0]);
-	// close(pipe_client_send_to_server[1]);
-}
-
 int main(int /* argc */, char ** /* argv */)
 {
 	empty_messages();
-	// ram_pipe_disk_ram();
+
 	std::cout << "Tests finished" << std::endl;
 	return 0;
 }

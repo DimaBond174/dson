@@ -18,7 +18,11 @@ namespace hi
 inline std::uint32_t to_uint32(Dson * obj, const std::uint32_t def = 0)
 {
 	if (!obj)
-		return {};
+		return def;
+	if (!obj->is_host_order())
+	{
+		Dson::converters().to_host(*obj);
+	}
 	switch (obj->data_type())
 	{
 	case types_map<std::uint32_t>::value:
@@ -50,27 +54,40 @@ inline std::uint32_t to_uint32(Dson * obj, const std::uint32_t def = 0)
 			}
 			return def;
 		}
+	case types_map<double>::value:
+		{
+			const double re = *(static_cast<double *>(obj->data()));
+			if (0 <= re && re <= std::numeric_limits<std::uint32_t>::max())
+			{
+				return static_cast<std::uint32_t>(re);
+			}
+			return def;
+		}
 	default:
 		break;
 	}
-	return {};
+	return def;
 }
 
 std::uint32_t to_uint32(DsonObj * obj, const std::uint32_t def = 0)
 {
 	if (!obj)
-		return {};
+		return def;
 	if (auto dson = dynamic_cast<Dson *>(obj))
 	{
 		return to_uint32(dson, def);
 	}
-	return {};
+	return def;
 }
 
 inline std::int32_t to_int32(Dson * obj, const std::int32_t def = 0)
 {
 	if (!obj)
-		return {};
+		return def;
+	if (!obj->is_host_order())
+	{
+		Dson::converters().to_host(*obj);
+	}
 	switch (obj->data_type())
 	{
 	case types_map<std::int32_t>::value:
@@ -102,27 +119,40 @@ inline std::int32_t to_int32(Dson * obj, const std::int32_t def = 0)
 			}
 			return def;
 		}
+	case types_map<double>::value:
+		{
+			const double re = *(static_cast<double *>(obj->data()));
+			if (std::numeric_limits<std::int32_t>::lowest() <= re && re <= std::numeric_limits<std::int32_t>::max())
+			{
+				return static_cast<std::int32_t>(re);
+			}
+			return def;
+		}
 	default:
 		break;
 	}
-	return {};
+	return def;
 }
 
 inline std::int32_t to_int32(DsonObj * obj, const std::int32_t def = 0)
 {
 	if (!obj)
-		return {};
+		return def;
 	if (auto dson = dynamic_cast<Dson *>(obj))
 	{
 		return to_int32(dson, def);
 	}
-	return {};
+	return def;
 }
 
 inline std::uint64_t to_uint64(Dson * obj, const std::uint64_t def = 0)
 {
 	if (!obj)
-		return {};
+		return def;
+	if (!obj->is_host_order())
+	{
+		Dson::converters().to_host(*obj);
+	}
 	switch (obj->data_type())
 	{
 	case types_map<std::uint32_t>::value:
@@ -147,27 +177,40 @@ inline std::uint64_t to_uint64(Dson * obj, const std::uint64_t def = 0)
 			}
 			return def;
 		}
+	case types_map<double>::value:
+		{
+			const double re = *(static_cast<double *>(obj->data()));
+			if (0 <= re && re <= std::numeric_limits<std::uint64_t>::max())
+			{
+				return static_cast<std::uint64_t>(re);
+			}
+			return def;
+		}
 	default:
 		break;
 	}
-	return {};
+	return def;
 }
 
 inline std::uint64_t to_uint64(DsonObj * obj, const std::uint64_t def = 0)
 {
 	if (!obj)
-		return {};
+		return def;
 	if (auto dson = dynamic_cast<Dson *>(obj))
 	{
 		return to_uint64(dson, def);
 	}
-	return {};
+	return def;
 }
 
 inline std::int64_t to_int64(Dson * obj, const std::int64_t def = 0)
 {
 	if (!obj)
-		return {};
+		return def;
+	if (!obj->is_host_order())
+	{
+		Dson::converters().to_host(*obj);
+	}
 	switch (obj->data_type())
 	{
 	case types_map<std::int32_t>::value:
@@ -185,21 +228,67 @@ inline std::int64_t to_int64(Dson * obj, const std::int64_t def = 0)
 		}
 	case types_map<std::int64_t>::value:
 		return *(static_cast<std::int64_t *>(obj->data()));
+	case types_map<double>::value:
+		{
+			const double re = *(static_cast<double *>(obj->data()));
+			if (std::numeric_limits<std::int64_t>::lowest() <= re && re <= std::numeric_limits<std::int32_t>::max())
+			{
+				return static_cast<std::int64_t>(re);
+			}
+			return def;
+		}
 	default:
 		break;
 	}
-	return {};
+	return def;
 }
 
 inline std::int64_t to_int64(DsonObj * obj, const std::int64_t def = 0)
 {
 	if (!obj)
-		return {};
+		return def;
 	if (auto dson = dynamic_cast<Dson *>(obj))
 	{
 		return to_int64(dson, def);
 	}
-	return {};
+	return def;
+}
+
+inline double to_double(Dson * obj, const double def = 0.0)
+{
+	if (!obj)
+		return def;
+	if (!obj->is_host_order())
+	{
+		Dson::converters().to_host(*obj);
+	}
+	switch (obj->data_type())
+	{
+	case types_map<std::int32_t>::value:
+		return *(static_cast<std::int32_t *>(obj->data()));
+	case types_map<std::uint32_t>::value:
+		return *(static_cast<std::uint32_t *>(obj->data()));
+	case types_map<std::uint64_t>::value:
+		return *(static_cast<std::uint64_t *>(obj->data()));
+	case types_map<std::int64_t>::value:
+		return *(static_cast<std::int64_t *>(obj->data()));
+	case types_map<double>::value:
+		return *(static_cast<double *>(obj->data()));
+	default:
+		break;
+	}
+	return def;
+}
+
+inline double to_double(DsonObj * obj, const double def = 0.0)
+{
+	if (!obj)
+		return def;
+	if (auto dson = dynamic_cast<Dson *>(obj))
+	{
+		return to_double(dson, def);
+	}
+	return def;
 }
 
 inline std::string_view to_string_view(Dson * obj)

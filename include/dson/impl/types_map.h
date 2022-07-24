@@ -8,10 +8,12 @@
 namespace hi
 {
 
+using TypeMarker = std::int32_t;
+
 template <int N>
 struct marker_id
 {
-	static std::int32_t const value = N;
+	static TypeMarker const value = N;
 };
 
 template <typename T>
@@ -84,6 +86,10 @@ struct types_map<std::uint64_t> : register_id<std::uint64_t, 6>
 };
 template <>
 struct types_map<std::vector<std::uint32_t>> : register_id<std::vector<std::uint32_t>, 7>
+{
+};
+template <>
+struct types_map<double> : register_id<double, 8>
 {
 };
 

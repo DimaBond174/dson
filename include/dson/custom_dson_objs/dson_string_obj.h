@@ -11,7 +11,7 @@ namespace hi
 class DsonStringObj : public DsonObj
 {
 public:
-	DsonStringObj(const std::int32_t key, std::string && object)
+	DsonStringObj(const DsonKey key, std::string && object)
 		: object_{std::move(object)}
 	{
 		setup_header(key);
@@ -46,7 +46,7 @@ public: // DsonObj
 		return int32_to_host(header_as_array()[1]);
 	}
 
-	std::int32_t key() const noexcept override
+	DsonKey key() const noexcept override
 	{
 		Header * _header = header();
 		if (_header->mark_byte_order_ == mark_host_order)
@@ -54,7 +54,7 @@ public: // DsonObj
 		return int32_to_host(header_as_array()[2]);
 	}
 
-	void set_key(std::int32_t _key) noexcept override
+	void set_key(DsonKey _key) noexcept override
 	{
 		Header * _header = header();
 		if (_header->mark_byte_order_ == mark_host_order)
@@ -67,7 +67,7 @@ public: // DsonObj
 		}
 	}
 
-	std::int32_t data_type() const noexcept override
+	TypeMarker data_type() const noexcept override
 	{
 		Header * _header = header();
 		if (_header->mark_byte_order_ == mark_host_order)

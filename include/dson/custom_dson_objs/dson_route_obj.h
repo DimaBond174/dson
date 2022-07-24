@@ -12,7 +12,7 @@ public:
 	template <typename K>
 	DsonRouteObj(K key)
 	{
-		setup_header(static_cast<std::int32_t>(key));
+		setup_header(static_cast<DsonKey>(key));
 	}
 
 	struct Address
@@ -107,7 +107,7 @@ public: // DsonObj
 		return static_cast<std::int32_t>(sizeof(Address));
 	}
 
-	std::int32_t key() const noexcept override
+	DsonKey key() const noexcept override
 	{
 		Header * _header = header();
 		if (_header->mark_byte_order_ == mark_host_order)
@@ -115,7 +115,7 @@ public: // DsonObj
 		return int32_to_host(header_as_array()[2]);
 	}
 
-	void set_key(std::int32_t _key) noexcept override
+	void set_key(DsonKey _key) noexcept override
 	{
 		Header * _header = header();
 		if (_header->mark_byte_order_ == mark_host_order)
@@ -128,7 +128,7 @@ public: // DsonObj
 		}
 	}
 
-	std::int32_t data_type() const noexcept override
+	TypeMarker data_type() const noexcept override
 	{
 		return types_map<std::vector<std::uint32_t>>::value;
 	}
@@ -147,7 +147,7 @@ public: // DsonObj
 
 	Result copy_to_fd_host_order(std::int32_t fd) override
 	{
-		if (offset_ == 0)
+		if (state_ == State::Ready)
 		{
 			to_host_order();
 			state_ = State::CopyingHeader;
@@ -204,7 +204,7 @@ private:
 		return std::launder(reinterpret_cast<Header *>(buf_));
 	}
 
-	void setup_header(const std::int32_t key)
+	void setup_header(const DsonKey key)
 	{
 		Header * _header = header();
 		_header->mark_byte_order_ = mark_host_order;

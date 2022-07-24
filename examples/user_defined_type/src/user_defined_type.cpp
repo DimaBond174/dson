@@ -38,18 +38,6 @@ struct MyStruct
 	}
 };
 
-// std::unique_ptr<hi::DsonObj> to_json_obj(std::int32_t key, MyStruct val)
-//{
-//     auto re = std::make_unique<hi::Dson>();
-//     const auto all_size = sizeof(std::uint32_t) /* для name.size() */ + val.name.size() + sizeof (val.age) + sizeof
-//     (val.male); char *buf = static_cast<char *>(re->init(key, hi::types_map<MyStruct>::value,
-//     static_cast<std::int32_t>(all_size))); if (!buf) return {}; *std::launder(reinterpret_cast<std::uint32_t *>(buf))
-//     = val.name.size(); buf += sizeof(std::uint32_t); std::memcpy(buf, val.name.data(), val.name.size()); buf +=
-//     val.name.size(); *std::launder(reinterpret_cast<std::uint16_t *>(buf)) = val.age; buf += sizeof(std::uint16_t);
-//     *std::launder(reinterpret_cast<bool *>(buf)) = val.male;
-//     return re;
-// }
-
 void hi::Dson::Converters::dson_user_defined_converters(ConvertersMap & to_host_order, ConvertersMap & to_network_order)
 {
 	// Подгружаем network order конвертеры с других компилируемых файлов

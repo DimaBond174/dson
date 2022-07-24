@@ -49,7 +49,7 @@ public: // hi::DsonObj
 		return network_ordered_buf_size + static_cast<std::int32_t>(very_big_data.size());
 	}
 
-	std::int32_t key() const noexcept override
+	hi::DsonKey key() const noexcept override
 	{
 		Header * _header = header();
 		if (_header->mark_byte_order_ == hi::mark_host_order)
@@ -57,7 +57,7 @@ public: // hi::DsonObj
 		return hi::int32_to_host(header_as_array()[2]);
 	}
 
-	void set_key(std::int32_t _key) noexcept override
+	void set_key(hi::DsonKey _key) noexcept override
 	{
 		Header * _header = header();
 		if (_header->mark_byte_order_ == hi::mark_host_order)
@@ -70,7 +70,7 @@ public: // hi::DsonObj
 		}
 	}
 
-	std::int32_t data_type() const noexcept override
+	hi::TypeMarker data_type() const noexcept override
 	{
 		return hi::types_map<VeryBigStruct>::value;
 	}

@@ -18,6 +18,8 @@ namespace hi
 inline constexpr std::uint32_t mark_host_order{1};
 inline const std::uint32_t mark_network_order{htonl(mark_host_order)};
 
+using DsonKey = std::int32_t;
+
 /**
   Интерфейс доступа к данным.
   Потоко небезопасно.
@@ -54,14 +56,14 @@ public:
 	 */
 	virtual bool is_network_order() const noexcept = 0;
 	virtual std::int32_t data_size() const noexcept = 0;
-	virtual std::int32_t key() const noexcept = 0;
-	virtual void set_key(std::int32_t _key) noexcept = 0;
+	virtual DsonKey key() const noexcept = 0;
+	virtual void set_key(DsonKey _key) noexcept = 0;
 	//    template<typename K>
 	//    void typed_set_key(K key)
 	//    {
 	//      set_key(static_cast<std::int32_t>(key));
 	//    }
-	virtual std::int32_t data_type() const noexcept = 0;
+	virtual TypeMarker data_type() const noexcept = 0;
 
 	virtual void copy_to_stream_host_order(std::ofstream & out) = 0;
 	virtual void copy_to_stream_network_order(std::ofstream & out) = 0;
@@ -113,7 +115,7 @@ public:
 		// Размер данных
 		std::int32_t data_size_; // [1]
 		// Ключ для поиска/идентификации данных
-		std::int32_t key_; // [2]
+		DsonKey key_; // [2]
 		// Тип данных
 		std::int32_t data_type_; // [3]
 	};

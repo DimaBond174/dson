@@ -3,6 +3,8 @@
 
 #include <dson/os/system_switch.h>
 
+#include <cfloat>
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <new>
@@ -79,6 +81,84 @@ inline std::int32_t int32_to_host(std::uint32_t data)
 	data = ntohl(data);
 	return (*std::launder(reinterpret_cast<std::int32_t *>(&data)));
 }
+
+enum class FloatPointType : std::uint8_t
+{
+	// Normal negative number
+	NormalNegative,
+	// Normal positive number
+	NormalPositive,
+	// Not-a-number (NaN) value
+	NaN,
+	// Negative infinity
+	InfNegative,
+	// Positive infinity.
+	InfPositive
+};
+
+constexpr std::int32_t buf_size_for_double =
+	static_cast<std::int32_t>(sizeof(FloatPointType) + sizeof(std::uint64_t) + sizeof(std::uint32_t));
+
+constexpr int double_mantissa_bits{53};
+
+inline void double_in_buf_to_host_order(char * data)
+{
+	FloatPointType type = *std::launder(reinterpret_cast<FloatPointType *>(data));
+	double * res = std::launder(reinterpret_cast<double *>(data));
+	switch (type)
+	{
+	case FloatPointType::NaN:
+		*res = std::numeric_limits<double>::quiet_NaN();
+		return;
+	case FloatPointType::InfNegative:
+		*res = -std::numeric_limits<double>::infinity();
+		return;
+	case FloatPointType::InfPositive:
+		*res = std::numeric_limits<double>::infinity();
+		return;
+	case FloatPointType::NormalNegative:
+		break;
+	case FloatPointType::NormalPositive:
+		break;
+	}
+	std::uint64_t * mantissa_ptr = std::launder(reinterpret_cast<std::uint64_t *>(data + sizeof(FloatPointType)));
+	std::uint32_t * exp_ptr = std::launder(reinterpret_cast<std::uint32_t *>(mantissa_ptr + 1));
+	*res = std::ldexp(static_cast<double>(ntohll(*mantissa_ptr)), int32_to_host(*exp_ptr));
+	if (type == FloatPointType::NormalNegative)
+	{
+		*res = -*res;
+	}
+} // double_in_buf_to_host_order
+
+inline void double_in_buf_to_network_order(char * data)
+{
+	const double from = *std::launder(reinterpret_cast<double *>(data));
+	FloatPointType * type = std::launder(reinterpret_cast<FloatPointType *>(data));
+	if (std::isnan(from))
+	{
+		*type = FloatPointType::NaN;
+		return;
+	}
+	if (std::isinf(from))
+	{
+		*type = (from < 0) ? FloatPointType::InfNegative : FloatPointType::InfPositive;
+		return;
+	}
+	*type = (from < 0) ? FloatPointType::NormalNegative : FloatPointType::NormalPositive;
+	++type;
+
+	int exp{0};
+	double frac = std::frexp(std::fabs(from), &exp);
+
+	// матиссу делаем целочисленной
+	std::uint64_t * mantissa = std::launder(reinterpret_cast<std::uint64_t *>(type));
+	*mantissa = htonll(static_cast<std::uint64_t>(std::ldexp(frac, double_mantissa_bits)));
+	++mantissa;
+
+	// корректируем степень
+	exp -= double_mantissa_bits;
+	*std::launder(reinterpret_cast<std::uint32_t *>(mantissa)) = int32_to_network(exp);
+} // double_in_buf_to_network_order
 
 } // namespace hi
 

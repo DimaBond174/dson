@@ -386,6 +386,105 @@ public:
 		return Result::Error;
 	}
 
+	/**
+	 * @brief load_from_buf
+	 * чтение из буфера
+	 * @param buf буфер
+	 * @param buf_size размер буфера
+	 * @return Result
+	 * @note загрузка происходит через окно буфера, окно множет быть много меньше чем передаваемый объём
+	 * (например через shared mem)
+	 * @note ожидается что в буфере уже есть Dson (текущий или заголовок нового)
+	 * (ожидание появления Dson, сброс в случае ошибки - должны обеспечиваться внешними механизмами)
+	 * @note за раз передаётся 1 Dson (нет механизмов загрузки с буфера сразу нескольких Dson,
+	 *  - либо уже идёт загрузка и размер Dson берётся из его заголовка
+	 *  - либо ожидается заголовок и которого будет понятен размер Dson)
+	 * @note если Dson больше по размеру чем buf_size, то ожидается что buf заполнен полностью
+	 */
+	Result load_from_buf(char * buf, std::int32_t buf_size)
+	{
+		switch (state_)
+		{
+		case State::Error:
+			[[fallthrough]];
+		case State::CopyingHeader:
+			[[fallthrough]];
+		case State::CopyingData:
+			[[fallthrough]];
+		case State::Ready:
+			{
+				clear();
+				offset_ = 0;
+				state_ = State::LoadingHeader;
+				dson_kind_ = DsonKind::DataBufNeedParse;
+			}
+			[[fallthrough]];
+		case State::LoadingHeader:
+			{
+				if (offset_ >= header_size)
+				{
+					assert(false);
+					state_ = State::Error;
+					return Result::Error;
+				}
+				auto readed = header_size - offset_;
+				if (readed > buf_size)
+					readed = buf_size;
+				std::memcpy(header_ + offset_, buf, readed);
+				offset_ += readed;
+				if (offset_ < header_size)
+				{
+					return Result::InProcess;
+				}
+				const std::int32_t size = data_size();
+				if (size < 0 || size > MAX_DSON_RAM_SIZE)
+				{
+					state_ = State::Error;
+					return Result::Error;
+				}
+				if (size == 0)
+				{
+					state_ = State::Ready;
+					dson_kind_ = DsonKind::DsonContainer;
+					return Result::Ready;
+				}
+				if (!allocate(size))
+				{
+					state_ = State::Error;
+					return Result::Error;
+				}
+				offset_ = 0;
+				state_ = State::LoadingData;
+				buf_size -= readed;
+				if (!buf_size)
+					return Result::InProcess;
+				buf += readed;
+			}
+			[[fallthrough]];
+		case State::LoadingData:
+			{
+				if (offset_ >= buf_size_)
+				{
+					assert(false);
+					return Result::Error;
+				}
+				auto readed = buf_size_ - offset_;
+				if (readed > buf_size)
+					readed = buf_size;
+				std::memcpy(buf_ + offset_, buf, readed);
+				offset_ += readed;
+				if (offset_ == buf_size_)
+				{
+					state_ = State::Ready;
+					return Result::Ready;
+				}
+				return Result::InProcess;
+			}
+		} // switch
+
+		return Result::Error;
+	}
+
 public: // DsonObj
 	bool is_host_order() const noexcept override
 	{
@@ -423,7 +522,7 @@ public: // DsonObj
 		return {};
 	}
 
-	std::int32_t key() const noexcept override
+	DsonKey key() const noexcept override
 	{
 		Header * _header = header();
 		if (_header->mark_byte_order_ == mark_host_order)
@@ -431,7 +530,7 @@ public: // DsonObj
 		return int32_to_host(header_as_array()[2]);
 	}
 
-	void set_key(const std::int32_t _key) noexcept override
+	void set_key(const DsonKey _key) noexcept override
 	{
 		Header * _header = header();
 		if (_header->mark_byte_order_ == mark_host_order)
@@ -447,10 +546,10 @@ public: // DsonObj
 	template <typename K>
 	void set_key(K key)
 	{
-		set_key(static_cast<std::int32_t>(key));
+		set_key(static_cast<DsonKey>(key));
 	}
 
-	std::int32_t data_type() const noexcept override
+	TypeMarker data_type() const noexcept override
 	{
 		if (state_ == State::Error)
 			return types_map<Empty>::value;
@@ -856,6 +955,8 @@ private:
 
 	void header_to_host() const noexcept
 	{
+		if (is_host_order())
+			return;
 		std::uint32_t * header = header_as_array();
 		for (std::uint32_t i = 0; i < header_array_len; ++i)
 		{
@@ -865,6 +966,8 @@ private:
 
 	void header_to_network() const noexcept
 	{
+		if (is_network_order())
+			return;
 		std::uint32_t * header = header_as_array();
 		if (!header)
 			return;
@@ -1422,6 +1525,23 @@ inline void Dson::Converters::dson_lib_defined_converters(
 		}
 	} // std::uint64_t, std::int64_t
 
+	{ // double
+		const auto key = types_map<double>::value;
+		to_host_order.insert_or_assign(
+			key,
+			[](Dson::Header &, char * data)
+			{
+				double_in_buf_to_host_order(data);
+			});
+
+		to_network_order.insert_or_assign(
+			key,
+			[](Dson::Header &, char * data)
+			{
+				double_in_buf_to_network_order(data);
+			});
+	} // double
+
 	{ // std::vector<std::uint32_t>
 		const auto key = types_map<std::vector<std::uint32_t>>::value;
 		to_host_order.insert_or_assign(
@@ -1477,6 +1597,14 @@ inline Dson::Dson(std::string data)
 {
 	char * buf = static_cast<char *>(init(types_map<std::string>::value, data.size()));
 	std::memcpy(buf, data.data(), data.size());
+}
+
+template <>
+inline Dson::Dson(double data)
+{
+	double * buf = static_cast<double *>(init(types_map<double>::value, buf_size_for_double));
+	// В host order просто double как есть хранится
+	*buf = data;
 }
 
 } // namespace hi
